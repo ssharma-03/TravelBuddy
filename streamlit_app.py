@@ -2,22 +2,18 @@ import streamlit as st
 from groq import Groq
 from dotenv import load_dotenv
 
+# Load environment variables from .env file if necessary
+load_dotenv()
+
 # Retrieve the API key from Streamlit secrets
 api_key = st.secrets.get("GROQ_API_KEY")
 
-# Use a fallback method if the API key is missing
-def chat(prompt):
-    if api_key:
-        client = Groq(api_key=api_key)
-        chat_completion = client.chat.completions.create(
-            messages=[{"role": "user", "content": prompt}],
-            model="llama3-70b-8192",
-        )
-        return chat_completion.choices[0].message.content
-    else:
-        return "API key is missing. Please set up the API key to use this feature."
+# Check if API key is available and initialize the client
+if api_key:
+    client = Groq(api_key=api_key)
+else:
+    client = None
 
-client = Groq(api_key=api_key)
 def is_travel_related(question):
     """
     Checks if the question is related to travel or hospitality.
@@ -29,28 +25,27 @@ def chat(prompt):
     """
     Sends a prompt to the Groq API and returns the response.
     """
-    try:
-        # Make the API call
-        chat_completion = client.chat.completions.create(
-            messages=[{"role": "user", "content": prompt}],
-            model="llama3-70b-8192"
-        )
+    if client:
+        try:
+            # Make the API call
+            chat_completion = client.chat.completions.create(
+                messages=[{"role": "user", "content": prompt}],
+                model="llama3-70b-8192"
+            )
 
-        # Debugging: Print the type and structure of chat_completion
-        print("Chat Completion Response:", chat_completion)
-        print("Type of chat_completion:", type(chat_completion))
-
-        # Extract choices from the response
-        choices = chat_completion.choices if hasattr(chat_completion, 'choices') else []
-        if choices:
-            # Access the first choice and its message content
-            first_choice = choices[0]
-            message = first_choice.message if hasattr(first_choice, 'message') else {}
-            message_content = message.content if hasattr(message, 'content') else 'No content available'
-            return message_content
-        return 'No response available'
-    except Exception as e:
-        return f"Error: {e}"
+            # Extract choices from the response
+            choices = chat_completion.choices if hasattr(chat_completion, 'choices') else []
+            if choices:
+                # Access the first choice and its message content
+                first_choice = choices[0]
+                message = first_choice.message if hasattr(first_choice, 'message') else {}
+                message_content = message.content if hasattr(message, 'content') else 'No content available'
+                return message_content
+            return 'No response available'
+        except Exception as e:
+            return f"Error: {e}"
+    else:
+        return "API key is missing. Please set up the API key to use this feature."
 
 def main():
     # Set up the Streamlit page configuration
