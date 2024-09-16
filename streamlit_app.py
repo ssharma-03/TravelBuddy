@@ -1,54 +1,36 @@
 import streamlit as st
 from groq import Groq
 from dotenv import load_dotenv
+import os
 
-# Load environment variables from .env file if necessary
+# Load environment variables from .env if running locally
 load_dotenv()
 
-# Retrieve the API key from Streamlit secrets
-api_key = st.secrets.get("GROQ_API_KEY")
+# Retrieve the API key from Streamlit secrets (preferred) or .env (fallback for local)
+api_key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
 
-# Check if API key is available and initialize the client
-if api_key:
-    client = Groq(api_key=api_key)
-else:
-    client = None
-
-def is_travel_related(question):
-    """
-    Checks if the question is related to travel or hospitality.
-    """
-    travel_keywords = ['hotel', 'flight', 'travel', 'booking', 'destination', 'trip', 'tour', 'vacation', 'resort', 'restaurant']
-    return any(keyword in question.lower() for keyword in travel_keywords)
-
+# Function to interact with the Groq API
 def chat(prompt):
-    """
-    Sends a prompt to the Groq API and returns the response.
-    """
-    if client:
+    if api_key:
         try:
-            # Make the API call
+            client = Groq(api_key=api_key)
             chat_completion = client.chat.completions.create(
                 messages=[{"role": "user", "content": prompt}],
-                model="llama3-70b-8192"
+                model="llama3-70b-8192",
             )
-
-            # Extract choices from the response
-            choices = chat_completion.choices if hasattr(chat_completion, 'choices') else []
-            if choices:
-                # Access the first choice and its message content
-                first_choice = choices[0]
-                message = first_choice.message if hasattr(first_choice, 'message') else {}
-                message_content = message.content if hasattr(message, 'content') else 'No content available'
-                return message_content
-            return 'No response available'
+            return chat_completion.choices[0].message.content
         except Exception as e:
             return f"Error: {e}"
     else:
         return "API key is missing. Please set up the API key to use this feature."
 
+# Function to check if the question is travel-related
+def is_travel_related(question):
+    travel_keywords = ['hotel', 'flight', 'travel', 'booking', 'destination', 'trip', 'tour', 'vacation', 'resort', 'restaurant']
+    return any(keyword in question.lower() for keyword in travel_keywords)
+
+# Main Streamlit app logic
 def main():
-    # Set up the Streamlit page configuration
     st.set_page_config(page_title="TravelBuddy 🌍", layout="wide", initial_sidebar_state="expanded")
 
     # Apply custom styles to the Streamlit app
