@@ -39,7 +39,7 @@ Feel free to reach out via email: workwithsomyasharma@gmail.com or open an issue
 
 🌟 Acknowledgements
 
-Special thanks to the developers behind Streamlit, Aspose.PDF, and Groq API for their amazing tools.
+Special thanks to the developers behind Streamlit and Groq API for their amazing tools.
 
 
 
