@@ -3,27 +3,17 @@ from groq import Groq
 from dotenv import load_dotenv
 import os
 
-# Load environment variables from .env if running locally
 load_dotenv()
+client = Groq(
+    api_key=os.getenv("Groq_API_KEY"),
+)
 
-# Retrieve the API key from Streamlit secrets (preferred) or .env (fallback for local)
-api_key = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
-
-# Function to interact with the Groq API
 def chat(prompt):
-    if api_key:
-        try:
-            client = Groq(api_key=api_key)
-            chat_completion = client.chat.completions.create(
-                messages=[{"role": "user", "content": prompt}],
-                model="llama3-70b-8192",
-            )
-            return chat_completion.choices[0].message.content
-        except Exception as e:
-            return f"Error: {e}"
-    else:
-        return "API key is missing. Please set up the API key to use this feature."
-
+    chat_completion = client.chat.completions.create(
+        messages=[{"role": "user", "content": prompt}],
+        model="llama3-70b-8192",
+    )
+    return chat_completion.choices[0].message.content
 # Function to check if the question is travel-related
 def is_travel_related(question):
     travel_keywords = ['hotel', 'flight', 'travel', 'booking', 'destination', 'trip', 'tour', 'vacation', 'resort', 'restaurant']
