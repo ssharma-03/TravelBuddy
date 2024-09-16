@@ -1,5 +1,6 @@
 import streamlit as st
 from groq import Groq
+from dotenv import load_dotenv
 
 # Retrieve the API key from Streamlit secrets
 api_key = st.secrets.get("GROQ_API_KEY")
@@ -16,20 +17,6 @@ def chat(prompt):
     else:
         return "API key is missing. Please set up the API key to use this feature."
 
-import streamlit as st
-from groq import Groq
-from dotenv import load_dotenv
-import os
-
-# Load environment variables from .env file
-load_dotenv()
-
-# Initialize the Groq client with the API key
-api_key = os.getenv("GROQ_API_KEY")
-if api_key is None:
-    raise ValueError("GROQ_API_KEY not found in environment variables")
-
-client = Groq(api_key=api_key)
 
 def is_travel_related(question):
     """
