@@ -17,7 +17,7 @@ def chat(prompt):
     else:
         return "API key is missing. Please set up the API key to use this feature."
 
-
+client = Groq(api_key=api_key)
 def is_travel_related(question):
     """
     Checks if the question is related to travel or hospitality.
