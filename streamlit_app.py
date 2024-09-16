@@ -1,24 +1,21 @@
 import streamlit as st
 from groq import Groq
-from dotenv import load_dotenv  # Optional: only if you're using local .env files
 
-
+# Retrieve the API key from Streamlit secrets
 api_key = st.secrets.get("GROQ_API_KEY")
 
-if api_key:
-    client = Groq(api_key=api_key)
-else:
-    st.error("The API service is currently unavailable. Please contact support if you continue to experience issues.")
-
+# Use a fallback method if the API key is missing
 def chat(prompt):
-    if client:
+    if api_key:
+        client = Groq(api_key=api_key)
         chat_completion = client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
             model="llama3-70b-8192",
         )
         return chat_completion.choices[0].message.content
     else:
-        return "Service is unavailable. Please try again later."
+        return "API key is missing. Please set up the API key to use this feature."
+
 def chat(prompt):
     """
     Function to get the response from Groq API based on the user prompt.
