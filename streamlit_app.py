@@ -16,42 +16,60 @@ def chat(prompt):
     else:
         return "API key is missing. Please set up the API key to use this feature."
 
+import streamlit as st
+from groq import Groq
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Initialize the Groq client with the API key
+api_key = os.getenv("GROQ_API_KEY")
+if api_key is None:
+    raise ValueError("GROQ_API_KEY not found in environment variables")
+
+client = Groq(api_key=api_key)
+
+def is_travel_related(question):
+    """
+    Checks if the question is related to travel or hospitality.
+    """
+    travel_keywords = ['hotel', 'flight', 'travel', 'booking', 'destination', 'trip', 'tour', 'vacation', 'resort', 'restaurant']
+    return any(keyword in question.lower() for keyword in travel_keywords)
+
 def chat(prompt):
     """
-    Function to get the response from Groq API based on the user prompt.
-    
-    Parameters:
-    - prompt (str): The question or statement to send to the API.
-    
-    Returns:
-    - str: The response from the API.
+    Sends a prompt to the Groq API and returns the response.
     """
-    chat_completion = client.chat.completions.create(
-        messages=[{"role": "user", "content": prompt}],
-        model="llama3-70b-8192",
-    )
-    # Access the message content correctly
-    return chat_completion.choices[0].message.content
+    try:
+        # Make the API call
+        chat_completion = client.chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model="llama3-70b-8192"
+        )
 
-def extract_text_from_pdf(pdf_file):
-    """
-    Extracts text from the provided PDF file.
-    
-    Parameters:
-    - pdf_file (BytesIO): PDF file uploaded by the user.
-    
-    Returns:
-    - str: Extracted text content of the PDF.
-    """
-    import aspose.pdf as pdf
-    input_pdf = pdf.Document(pdf_file)
-    txt = pdf.text.TextAbsorber()
-    txt.visit(input_pdf.pages[1])  # Extracting text from the second page
-    return txt.text
+        # Debugging: Print the type and structure of chat_completion
+        print("Chat Completion Response:", chat_completion)
+        print("Type of chat_completion:", type(chat_completion))
+
+        # Extract choices from the response
+        choices = chat_completion.choices if hasattr(chat_completion, 'choices') else []
+        if choices:
+            # Access the first choice and its message content
+            first_choice = choices[0]
+            message = first_choice.message if hasattr(first_choice, 'message') else {}
+            message_content = message.content if hasattr(message, 'content') else 'No content available'
+            return message_content
+        return 'No response available'
+    except Exception as e:
+        return f"Error: {e}"
 
 def main():
-    st.set_page_config(page_title="TravelBuddy 🤖", layout="wide", initial_sidebar_state="expanded")
+    # Set up the Streamlit page configuration
+    st.set_page_config(page_title="TravelBuddy 🌍", layout="wide", initial_sidebar_state="expanded")
 
+    # Apply custom styles to the Streamlit app
     st.markdown(
         """
         <style>
@@ -90,51 +108,37 @@ def main():
         unsafe_allow_html=True,
     )
 
-    st.title("TravelBuddy 🤖")
+    st.title("TravelBuddy 🌍")
 
-    st.markdown(""" 
-    ### 🌍 **Welcome to TravelBuddy**  
-    Your AI-powered assistant for all travel and hospitality-related queries!  
-    Upload your PDF, ask questions, and get instant answers tailored to your travel needs.
+    st.markdown("""
+    ### 🌟 **Welcome to TravelBuddy!**  
+    Your AI-powered assistant for travel planning and recommendations!  
+    Ask questions about your travel plans, get suggestions, and more.
     """)
 
-    st.sidebar.header("📄 Upload PDF")
-    uploaded_file = st.sidebar.file_uploader("Upload a PDF file", type="pdf")
+    st.sidebar.header("✈️ Travel Assistant")
+    st.sidebar.markdown("""
+    **How it works:**
+    - Enter your travel-related questions or needs.
+    - Receive instant suggestions and information.
+    """)
 
-    if uploaded_file is not None:
-        try:
-            progress_bar = st.progress(0)
-            
-            for i in range(100):
-                progress_bar.progress(i + 1)
+    st.subheader("💬 Ask Your Travel Questions")
+    question = st.text_input("Enter your question here:", key="question_input")
 
-            with st.spinner('Extracting text from the PDF...'):
-                pdf_text = extract_text_from_pdf(uploaded_file)
-
-            st.sidebar.success("PDF file uploaded successfully!")
-
-            st.sidebar.subheader("📜 Extracted Text Preview")
-            st.sidebar.text_area("Extracted Text", pdf_text[:500], height=200, key="extracted_text")
-
-            st.subheader("💬 Ask Questions Based on PDF Content")
-            question = st.text_input("Enter your question here:", key="question_input")
-
-            if st.button("Get Answer"):
-                if question:
-                    with st.spinner('Generating answer...'):
-                        prompt = f"Act as a travel assistant and answer the following question based on the data provided. Data: {pdf_text}. Question: {question}"
-                        response = chat(prompt)
-                    st.success("Answer Generated!")
-
-                    st.subheader("📬 Answer")
-                    st.write(response)
-                else:
-                    st.error("Please enter a question")
-
-        except Exception as e:
-            st.error(f"Error: {e}")
-    else:
-        st.warning("Please upload a PDF file on the sidebar.")
+    if st.button("Get Answer"):
+        if question:
+            if is_travel_related(question):
+                with st.spinner('Generating answer...'):
+                    prompt = f"Act as a travel assistant and answer '{question}' based on general travel and hospitality knowledge."
+                    response = chat(prompt)
+                st.success("Answer Generated!")
+                st.subheader("📬 Answer")
+                st.write(response)
+            else:
+                st.error("Sorry, I can only assist with travel and hospitality-related questions.")
+        else:
+            st.error("Please enter a question")
 
 if __name__ == "__main__":
     main()
